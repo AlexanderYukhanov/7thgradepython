@@ -1,9 +1,12 @@
-#from __future__ import print_function
+
+#!/usr/bin/env python3
+import time
 
 # all scenes
 scenes = {}
 
 
+# Describes the state of the player
 class Player:
     items = []
     alive = True
@@ -38,7 +41,7 @@ def get_list_of_available_actions(player, scene):
     for i in range(0, len(scene.items)):
         # take an item
         def take_item(item):
-            def _take_item(player):
+            def _take_item(player, _):
                 player.items.append(scene.items[item])
                 scene.items = scene.items[:item] + scene.items[item + 1:]
                 return player
@@ -49,7 +52,7 @@ def get_list_of_available_actions(player, scene):
     for i in range(0, len(player.items)):
         # drop the item
         def drop_item(item):
-            def _drop_item(player):
+            def _drop_item(player, _):
                 scene.items.append(player.items[item])
                 player.items = player.items[:item] + player.items[item + 1:]
                 return player
@@ -82,22 +85,33 @@ def process_scene(player, scene):
     print('You can:')
     available_actions = get_list_of_available_actions(player, scene)
     for i in range(0, len(available_actions)):
-        print(i + 1, available_actions[i][0])
+        print(i + 1, "-", available_actions[i][0])
 
-    choice = input("What would you do?: ")
-    choice = int(choice) - 1
+    print()
+    while True:
+        choice = input("What would you do?: ")
+        try:
+            choice = int(choice) - 1
+            if choice >= 0 and choice < len(available_actions):
+                break
+        except ValueError:
+            pass
+        print()
+        print("Kidding? Try to do it yourself first")
+        time.sleep(2) # let the player to wait and realize how stupid he was
+
     selected_action = available_actions[choice]
     effect = selected_action[2]
     if effect:
-        player = effect(player)
-    return player, selected_action[1]
+        effect(player, scene)
+    return selected_action[1]
 
 
 def game(starting_scene):
     player = Player()
     scene = scenes[starting_scene]
     while player.alive:
-        player, new_scene = process_scene(player, scene)
+        new_scene = process_scene(player, scene)
         if new_scene:
             scene = scenes[new_scene]
 
@@ -112,11 +126,11 @@ class Road1:
     ]
 
 
-def exploit_when_toilet_flushed(player):
+# This is an action associated with 'flash a toilet', it makes the player to die
+def exploit_when_toilet_flushed(player, _):
     print("Oh noooo...")
     print("It was a bomb detonator, you are doomed")
     player.alive = False
-    return player
 
 
 class Restroom:
